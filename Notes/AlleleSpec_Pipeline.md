@@ -1,9 +1,9 @@
 Allele-specific mapping of short reads
 ======================================
 
-based on [lapels](https://code.google.com/p/lapels/) and [suspenders](https://pypi.python.org/pypi/suspenders/)
+Based on [lapels](https://code.google.com/p/lapels/) and [suspenders](https://pypi.python.org/pypi/suspenders/), we want to establish a Galaxy-based pipeline for allele-specific mapping of RNA-seq and DNA-seq applications.
 
-see those publications for details:
+Please see those publications for details on lapels, suspenders and MOD files:
 
 [Holt, J., Huang, S., McMillan, L., & Wang, W. (2013). Read Annotation Pipeline for High-Throughput Sequencing Data. In J. Gao (Ed.), ACM Conference on Bioinformatics, Computational Biology and Biomedical Informatics. Washington, DC, USA.](http://csbio.unc.edu/CCstatus/Media/suspenders_acmbcb2013.pdf)
 
@@ -50,6 +50,8 @@ for RNA-seq: GTF file is needed, too
 * samFilter_v2_suspenders.py
 
 ![Overview](https://raw.githubusercontent.com/friedue/AlleleSpecific/master/images/pipelineOverview.png)
+
+Image modified from [Huang et al., 2014](http://dx.doi.org/10.1093/database/bau057) to illustrate the different steps of our pipeline
 
 -----------------------------------------------
 
