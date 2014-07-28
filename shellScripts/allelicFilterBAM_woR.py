@@ -32,7 +32,7 @@ def main(argv):
     	      		continue
 
 
-        	elif len(field) < 12: # is this save enough? will it always be in the 12th field? perhaps more stable: second-last and last field
+        	elif len(field) < 12: # checking the tag fields (after field 12)
 			keep = false
 
             	for subfield in field[12:]:
@@ -41,7 +41,7 @@ def main(argv):
                 		origin = 1
 			elif name=='po' and int(value) == 2:
 				origin = 2
-			elif name=='ct' and value=='R':
+			elif name=='ct' and value=='R': # ct:R = randomly assigned reads --> will be ignored
 				keep = False
 
 		if(origin == 1 and keep):
