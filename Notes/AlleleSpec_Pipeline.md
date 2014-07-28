@@ -40,23 +40,30 @@ for RNA-seq: GTF file is needed, too
 4. modmap (gene annotation)
 
 ###### additional tools
-tabix
-bowtie2/tophat
+
+* tabix
+* bowtie2/tophat
 
 ###### custom-made scripts
 
-changeChrNamesInMODFile.awk
-samFilter_v2_suspenders.py
+* changeChrNamesInMODFile.awk
+* samFilter_v2_suspenders.py
 
+![Overview](https://raw.githubusercontent.com/friedue/AlleleSpecific/master/images/pipelineOverview.png)
 
-###  1. lapels/bin/get_refmeta 
+-----------------------------------------------
+
+Part I: Preparing pseudogenomes
+---------------
+
+###  I.1. lapels/bin/get_refmeta 
 
 Meta-data for reference genome
 
       /package/lapels-1.0.5/bin/get_refmeta -o ${REF_GENOME}.meta ${REF_GENOME} ${REF_FASTA}
 
 
-### 2. generating MOD files
+### I.2. generating MOD files
 
 ##### a) indexing of vcf files
    
@@ -81,7 +88,7 @@ SNPs with bad quality (FI tag = 0) will be discarded
     cat ${REF_GENOME}_SNPs_${genotype}.mod ${REF_GENOME}_indels_${genotype}.mod |\
 	sort -k2,2n -k3,3n | uniq | awk -f changeChrNamesInMODFile.awk - > ${REF_GENOME}_indels_SNPs_${genotype}_changedChr.mod 
 
-### lapels/bin/insilico
+### I.3. lapels/bin/insilico
 
 generating pseudogenomes
 
@@ -92,11 +99,14 @@ CAVE: after this step, the MOD file will be gzipped (without any indication in t
 		${REF_FASTA} -v -f \
 		-o pseudogenome_${REF_GENOME}_${genotype}.fa >${genotype}.insilico_`date +"%Y%m%d%H%M%S"`.log 
 
+---------------------------------------
 
-### 4. Bowtie/Tophat: mapping to each pseudogenome
+Part II: Mapping
+------------------
+
+### II.1. Bowtie/Tophat: mapping to each pseudogenome
 
 bowtie/tophat indeces
-
 
 	/package/bowtie2-2.1.0/bowtie2-build pseudogenome_${REF_GENOME}_${genotype}.fa pseudogenome_${REF_GENOME}_${genotype} > ${genotype}.bowtieIndex_`date +"%Y%m%d%H%M%S"`.log 2> ${genotype}.bowtieIndex_Error_`date +"%Y%m%d%H%M%S"`.log
 
@@ -173,7 +183,7 @@ modmap expects 0-based positions, since gtf files are 1-based, I first convert t
 		/package/samtools/samtools index ${FOLDER}/accepted_hits.bam &
   
 
-### 5. lapels/bin/pylapels
+### II.2. lapels/bin/pylapels
 
 **translate different pseudogenome mappings back to reference genome**
 
@@ -184,7 +194,7 @@ modmap expects 0-based positions, since gtf files are 1-based, I first convert t
     
  
 
-### 6. suspenders/bin/pysuspenders
+### II.3 suspenders/bin/pysuspenders
 
 * merging the parental and maternal mapping, determining best fit for each read --> 1 BAM file with reads where flags indicate maternal or paternal origin
 
@@ -193,8 +203,11 @@ modmap expects 0-based positions, since gtf files are 1-based, I first convert t
 			tophat_${SAMPLE}_${MAT_STRAIN}/accepted_hits_pylapels.bam #
 			tophat_${SAMPLE}_${PAT_STRAIN}/accepted_hits_pylapels.bam
 
-    
-### 7. BAM file filter, merge, sort, index
+-----------------------------------------
+
+Part III: Counting allele-specific reads
+-----------------------------------------
+### III BAM file filter, merge, sort, index
 
 Suspender files should be filtered:
 
