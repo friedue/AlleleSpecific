@@ -28,7 +28,7 @@ for RNA-seq: GTF file is needed, too
     REF_GENOME=ce10 # reference genome
     MAT_STRAIN=A # maternal strain --> must match entry from to vcf column
     PAT_STRAIN=B # paternal strain --> must match entry from vcf column
-    CHROMOSOMES=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,X
+    CHROMOSOMES=1,2,3,X --> in case, one is interested in a couple of chromosomes only
 
 ##### programs
 
