@@ -3,4 +3,8 @@ AlleleSpecific
 
 pipeline for allele-specific mapping of short reads
 
-__Authors: B. Hummel & F. Dündar__
+Uff...
+
+Authors: B. Hummel & F. Dündar
+
+Nee, total doofer Tag.
