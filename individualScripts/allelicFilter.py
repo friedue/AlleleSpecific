@@ -17,14 +17,26 @@ def get_args():
     parser.add_argument('--outfile1', '-alt1', type=str, required=True, help = 'Name for output file with alternative genome 1')
     parser.add_argument('--outfile2', '-alt2', type=str, required=True, help = 'Name for output file with alternative genome 2')
     parser.add_argument('--outfile3', '-neither', type=str, help = 'Name for output file with reads that mapped equally well to both alternative genomes (optional).')
+    parser.add_argument('--removeMultiMapped', '-vMulti', action='store_true', default=False, help = 'exclude reads that have more than one alignment based on the NH and/or XS tag')
 
     args=parser.parse_args()
     return args
+
     
 def get_basenames(FileName):
     '''extracts the basename of the filenames for easy formating of the read count output'''
     Name = os.path.splitext(os.path.basename(FileName))[0]
     return(Name)
+
+
+def remove_multiAlignments(ReadTagsEntry, KeepInfo):
+    '''Checks for NH and XS tag to remove reads that aligned more than once'''    
+    keepRead = KeepInfo
+    if 'XS' in ReadTagsEntry:
+        keepRead=False
+    elif 'NH' in ReadTagsEntry and ReadTagsEntry[1] > 1:
+        keepRead=False
+    return(keepRead)
 
 
 def main():
@@ -47,13 +59,18 @@ def main():
         intags = DNAread.tags
 
         for entry in intags:
+
             if 'po' in entry and entry[1] == 2:
                 origin = 2
             elif 'po' in entry and entry[1] == 1:
                 origin = 1
-            elif 'ct' in entry and entry[1]== 'R':
+            
+            if 'ct' in entry and entry[1]== 'R':
                 keep = False
 
+            if args.removeMultiMapped:
+                keep = remove_multiAlignments(entry, keep)
+        
         if(origin == 1 and keep):
             out1.write(DNAread)
             count1 += 1
