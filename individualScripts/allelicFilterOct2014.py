@@ -11,25 +11,37 @@ import getopt
 import pysam
 import os
 import doctest
+import re
 
 def get_args():
     parser=argparse.ArgumentParser(description='Split suspender BAM files')
     parser.add_argument('--BAMfile', '-in', type=str, required=True, help="suspender-generated BAM file")
-    parser.add_argument('--outfile1', '-alt1', type=str, required=True, help = 'Name for output file with alternative genome 1')
-    parser.add_argument('--outfile2', '-alt2', type=str, required=True, help = 'Name for output file with alternative genome 2')
-    parser.add_argument('--outfile3', '-neither', type=str, help = 'Name for output file with reads that mapped equally well to both alternative genomes (optional).')
-    parser.add_argument('--filterForMappingQuality', '-mapQ', type=int, help = 'indicate a minimum mapping quality that each read (pair) should have')
-    parser.add_argument('--removeMultiMapped', '-vMulti', action='store_true', default=False, help = 'exclude reads that have more than one alignment based on the NH and/or XS tag')
-    parser.add_argument('--coordinateSorting', '-coordSort', action='store_true', default=False, help = 'sort the resulting bam files according to read coordinates and index them')
+    parser.add_argument('--outfile1', '-alt1', type=str, required=True, help = 'Prefix for output file with alternative genome 1')
+    parser.add_argument('--outfile2', '-alt2', type=str, required=True, help = 'Prefix for output file with alternative genome 2')
+    parser.add_argument('--outfile3', '-neither', type=str, help = 'Prefix for output file with reads that mapped equally well to both alternative genomes (optional).')
+    parser.add_argument('--filterDuplicates', '-dup', type=str, default='yes', help = 'remove duplicates; default: yes')
+    parser.add_argument('--filterForMappingQuality', '-mapQ', type=int, help = 'indicate a minimum mapping quality that each read (pair) should have, default: 0')
+    parser.add_argument('--removeMultiMapped', '-vMulti', action='store_true', default=False, help = 'exclude reads that have more than one alignment based on the NH and/or XS tag; default: not set')
+    parser.add_argument('--coordinateSorting', '-coordSort', action='store_true', default=False, help = 'sort the resulting bam files according to read coordinates and index them; default: not set')
 
     args=parser.parse_args()
     return args
 
     
-def get_basenames(FileName):
-    '''extracts the basename of the filenames for easy formating of the read count output'''
-    Name = os.path.splitext(os.path.basename(FileName))[0]
-    return(Name)
+def prepare_header(BamFile, Sorting):
+    '''replaces the entry that indicates the sorting of a BAM file with a PICARD-consistent entry'''
+    replacements = {'query' : 'queryname', 'unsort' : 'unsorted' , 'coordinate' : 'coordinate'}
+    headerList = ['query', 'coordinate','unsort']
+    oH = BamFile.header
+
+    if Sorting:
+        oH['HD']['SO'] = 'coordinate'
+    else:
+        for k in headerList:
+            if re.search(k, oH['HD']['SO']):
+                oH['HD']['SO'] = replacements[k]
+    
+    return(oH)
 
 
 def remove_multiAlignments(Read, KeepInfo):
@@ -38,7 +50,7 @@ def remove_multiAlignments(Read, KeepInfo):
     '''    
     keepRead = KeepInfo
    
-    # the highest possible alignment score in end-to-end alignment is 0.
+    # the highest possible alignment score in end-to-end align.bamment is 0.
     # For each mismatch or gap open/extension,
     # that score is decremented by some amount --> negative values
     try:
@@ -100,7 +112,6 @@ def save_reads(Read, KeepInfo, outFile1, outFile2, outFile3, c):
 
 def sort_output(outPrefix):
     '''Sorts the output file by read coordinate'''
-    ## Sort by position
     pysam.sort(outPrefix+'.originalSort.bam', outPrefix + '.coordSort')    
     #os.remove(outPrefix+'.originalSort.tmp.bam')
     
@@ -117,13 +128,15 @@ def main():
 
     infile = pysam.Samfile(args.BAMfile, "rb")
     
+    newHeader = prepare_header(infile, args.coordinateSorting)
+    
     out1 = args.outfile1
-    out1_noSort = pysam.Samfile(out1[:out1.rindex('.bam')] + '.originalSort.bam', "wb", template = infile )
     out2 = args.outfile2
-    out2_noSort = pysam.Samfile(out2[:out2.rindex('.bam')] + '.originalSort.bam' , "wb", template = infile )
+    out1_noSort = pysam.Samfile(out1 + '.originalSort.bam', "wb", header = newHeader ) # template will cause the original header to be used, one could modify the header by generating an appropriate dictionary structure, newHeader, and then use that: header = newHeader
+    out2_noSort = pysam.Samfile(out2 + '.originalSort.bam' , "wb", header = newHeader )
     if args.outfile3:
         out3 = args.outfile3
-        out3_noSort = pysam.Samfile(out3[:out3.rindex('.bam')] + '.originalSort.bam' , "wb", template = infile )
+        out3_noSort = pysam.Samfile(out3 + '.originalSort.bam' , "wb", header = newHeader )
      
     else:
         out3 = None
@@ -140,8 +153,11 @@ def main():
     
     for DNAread in infile:
         #check if read should be kept
-        if DNAread.is_duplicate or DNAread.flag == 4: # excluding unmapped reads
+        if DNAread.flag == 4: # excluding unmapped reads
             keep = False    
+
+        if args.filterDuplicates == 'yes' and DNAread.is_duplicate:
+            keep=False
 
         if keep and [item for item in DNAread.tags if item[0] == 'ct'][0][1] == 'R':
             keep = False
@@ -187,14 +203,14 @@ def main():
     if args.outfile3:
         out3_noSort.close()
 
-    CountOut="reads mapped to alternative genome 1 ({1}): {0}\nreads mapped to alternative genome 2 ({3}): {2}\nundistinguishable reads {4}".format(Counts[0], get_basenames(args.outfile1), Counts[1], get_basenames(args.outfile2), Counts[2])
+    CountOut="reads mapped to alternative genome 1 ({1}): {0}\nreads mapped to alternative genome 2 ({3}): {2}\nundistinguishable reads {4}".format(Counts[0], args.outfile1, Counts[1], args.outfile2, Counts[2])
     print CountOut
     
     if args.coordinateSorting:
-        sort_output(out1[:out1.rindex('.bam')])
-        sort_output(out2[:out2.rindex('.bam')])
+        sort_output(out1)
+        sort_output(out2)
         if args.outfile3:
-            sort_output(out3[:out3.rindex('.bam')])
+            sort_output(out3)
 
 if __name__ == '__main__':
     main()
