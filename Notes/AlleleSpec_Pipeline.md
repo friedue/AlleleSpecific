@@ -47,7 +47,7 @@ for RNA-seq: GTF file is needed, too
 ###### custom-made scripts
 
 * changeChrNamesInMODFile.awk
-* samFilter_v2_suspenders.py
+* allelicFilter.py
 
 ![Overview](https://raw.githubusercontent.com/friedue/AlleleSpecific/master/images/pipelineOverview.png)
 
@@ -55,7 +55,7 @@ Image modified from [Huang et al., 2014](http://dx.doi.org/10.1093/database/bau0
 
 -----------------------------------------------
 
-Part I: Preparing pseudogenomes - this will only need to be done once per experiment!
+Part I: Preparing pseudogenomes - this will only need to be done once per genome version!
 ---------------
 
 ###  I.1. lapels/bin/get_refmeta 
@@ -108,11 +108,13 @@ Part II: Mapping - this needs to be done for every sample
 
 ### II.1. Bowtie/Tophat: mapping to each pseudogenome
 
-building bowtie indeces
+#### Non-RNA-seq experiment
+
+**building bowtie indeces**
 
 	bowtie2-2.1.0/bowtie2-build pseudogenome_${REF_GENOME}_${genotype}.fa pseudogenome_${REF_GENOME}_${genotype} > ${genotype}.bowtieIndex_`date +"%Y%m%d%H%M%S"`.log 2> ${genotype}.bowtieIndex_Error_`date +"%Y%m%d%H%M%S"`.log
 
-##### bowtie2
+**mapping with bowtie2** (example is shown for paired-end sequencing experiment (-1, -2) with maximum distance between the mates of 1 kb (-X)
 
 	(/bowtie2-2.1.0/bowtie2 -x pseudogenome_${REF_GENOME}_${genotype} \
 		-1 ${fastq_folder}${sample}_R1.fastq.gz -2 ${fastq_folder}${sample}_R2.fastq.gz \
@@ -129,7 +131,7 @@ building bowtie indeces
 2. transcriptome build for both genotypes using 1 set of FASTQs with **TopHat**
 3. run TopHat on remaining samples
 
-###### modmap
+###### 1. modmap
 
 modmap expects 0-based positions, since gtf files are 1-based, I first convert them into 0-based, use modmap to change the annotation to match the individual genomes, and turn the resulting 0-based gtf file back into 1-based (additionally, I remove the negative numbers introduced by modmap for regions that fall into deletions)
 
@@ -144,10 +146,10 @@ the awk magic here is neccessary to turn the negative values into positive ones 
      awk -F "\t" '{OFS="\t";print $1,$2,$3, $4<0?$4*-1:$4+1,$5<0?$5*-1:$5+1,$6,$7,$8,$9}' ${REF_GENOME}_${genotype}_0based.gtf > ${REF_GENOME}_${genotype}_1based.gtf
     
 
-###### TopHat
+###### 2. & 3. TopHat
 
  
-**building the transcriptome index for both genotypes**
+**2. building the transcriptome index for both genotypes**
 
 * you'll need the insert sizes for the reads from RNA-seq experiments --> I used a script from Andreas that generated txt files named "insert_stats_RNA..." using Picard
 
@@ -167,7 +169,7 @@ running top hat _once per pseudogenome_ to obtain the transcriptome indeces
 	    SAMPLE_R1.fastq.gz \
     	    SAMPLE_R2.fastq.gz
     
-**looping over remaining files fastq files (if any)**
+**3. looping over remaining files fastq files (if any)**
 
         for fastq in ${FASTQ_FOLDER}*_R1.fastq.gz
         do
