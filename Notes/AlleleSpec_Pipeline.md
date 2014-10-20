@@ -127,11 +127,11 @@ Part II: Mapping - this needs to be done for every sample
   
 ##### RNA-seq: tophat
 
-1. generate GTFs for maternal and paternal versions: **modmap**
-2. transcriptome build for both genotypes using 1 set of FASTQs with **TopHat**
-3. run TopHat on remaining samples
+a) generate GTFs for maternal and paternal versions: **modmap**
+b) transcriptome build for both genotypes using 1 set of FASTQs with **TopHat**
+c) run TopHat on remaining samples
 
-###### 1. modmap
+###### a) modmap
 
 modmap expects 0-based positions, since gtf files are 1-based, I first convert them into 0-based, use modmap to change the annotation to match the individual genomes, and turn the resulting 0-based gtf file back into 1-based (additionally, I remove the negative numbers introduced by modmap for regions that fall into deletions)
 
@@ -146,10 +146,7 @@ the awk magic here is neccessary to turn the negative values into positive ones 
      awk -F "\t" '{OFS="\t";print $1,$2,$3, $4<0?$4*-1:$4+1,$5<0?$5*-1:$5+1,$6,$7,$8,$9}' ${REF_GENOME}_${genotype}_0based.gtf > ${REF_GENOME}_${genotype}_1based.gtf
     
 
-###### 2. & 3. TopHat
-
- 
-**2. building the transcriptome index for both genotypes**
+###### b) building the transcriptome index for both genotypes using TopHat
 
 * you'll need the insert sizes for the reads from RNA-seq experiments --> I used a script from Andreas that generated txt files named "insert_stats_RNA..." using Picard
 
@@ -169,7 +166,7 @@ running top hat _once per pseudogenome_ to obtain the transcriptome indeces
 	    SAMPLE_R1.fastq.gz \
     	    SAMPLE_R2.fastq.gz
     
-**3. looping over remaining files fastq files (if any)**
+#### c) looping over remaining files fastq files (if any)**
 
         for fastq in ${FASTQ_FOLDER}*_R1.fastq.gz
         do
