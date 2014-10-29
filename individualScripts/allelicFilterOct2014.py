@@ -1,9 +1,18 @@
 #!/usr/bin/env python
 
-'''This program splits BAM files processed by suspenders: reads are written into different output alignment files (.bam) depending on their genomic origin (which is noted in the po:i tag).'''
-'''If a third output file is indicated, reads which map equally well __at the same position_ in both genomes will also be reported (po:i:3).'''
-'''Currently, this script ignores reads that were assigned by suspender's "RANDOM" filter'. '''
-'''Possible improvements: let user choose which reads should be ignored (not just RANDOM reads, perhaps); allow SAM format for in- and output; multiprocessing'''
+''' This program splits BAM files processed by suspenders:
+reads are written into different output alignment files (.bam)
+depending on their genomic origin (which is noted in the po:i tag).
+If a third output file is indicated, reads which map equally well
+_at the same position_ in both genomes will also be reported (po:i:3).
+Currently, this script ignores reads that were assigned by
+suspender's "RANDOM" filter'.
+Possible improvements:
+let user choose which reads should be ignored (not just
+RANDOM reads, perhaps);
+allow SAM format for in- and output;
+multiprocessing
+'''
 
 import sys
 import argparse
