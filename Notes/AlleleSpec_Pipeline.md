@@ -201,7 +201,7 @@ running top hat _once per pseudogenome_ to obtain the transcriptome indeces
 
 ### II.3 suspenders/bin/pysuspenders
 
-* merging the parental and maternal mapping, determining best fit for each read --> 1 BAM file with reads where flags indicate maternal or paternal origin
+merging the parental and maternal mapping, determining best fit for each read --> 1 BAM file with reads where flags indicate maternal or paternal origin
 
 		suspenders-0.2.4/bin/pysuspenders #
 			--lapels --quality -p 15 mergedAlignment_${SAMPLE}.bam #
