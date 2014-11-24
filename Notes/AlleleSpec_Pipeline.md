@@ -48,6 +48,7 @@ for RNA-seq: GTF file is needed, too
 
 * changeChrNamesInMODFile.awk
 * allelicFilter.py
+* additional script for insert-size determination (needed only if TopHat is used for alignment)
 
 ![Overview](https://raw.githubusercontent.com/friedue/AlleleSpecific/master/images/pipelineOverview.png)
 
@@ -58,24 +59,26 @@ Image modified from [Huang et al., 2014](http://dx.doi.org/10.1093/database/bau0
 Part I: Preparing pseudogenomes - this will only need to be done once per genome version!
 ---------------
 
-###  I.1. lapels/bin/get_refmeta 
+###  I.1. Meta-data for reference genome
 
-Meta-data for reference genome
+-->  lapels/bin/get_refmeta
 
       lapels-1.0.5/bin/get_refmeta -o ${REF_GENOME}.meta ${REF_GENOME} ${REF_FASTA}
 
 
 ### I.2. generating MOD files
 
-##### a) indexing of vcf files
+##### a) indexing of VCF files
    
 	for vcf in ${VCF_INDELS} ${VCF_SNP}
-    do
-    	tabix-0.2.6/bgzip -c ${vcf} > ${vcf}.gz
-    	tabix-0.2.6/tabix -p vcf ${vcf}.gz
-    done
+	do
+          tabix-0.2.6/bgzip -c ${vcf} > ${vcf}.gz
+    	  tabix-0.2.6/tabix -p vcf ${vcf}.gz
+    	done
 
-##### b) lapels/bin/vcf2mod
+##### b) VCF to MOD format
+
+--> lapels/bin/vcf2mod
 
 1 MOD file per VCF file (SNPs, INDELS) and genotype (maternal, paternal)
 SNPs with bad quality (FI tag = 0) will be discarded
@@ -90,9 +93,9 @@ SNPs with bad quality (FI tag = 0) will be discarded
     cat ${REF_GENOME}_SNPs_${genotype}.mod ${REF_GENOME}_indels_${genotype}.mod |\
 	sort -k2,2n -k3,3n | uniq | awk -f changeChrNamesInMODFile.awk - > ${REF_GENOME}_indels_SNPs_${genotype}_changedChr.mod 
 
-### I.3. lapels/bin/insilico
+### I.3. Generating pseudogenomes
 
-generating pseudogenomes
+--> lapels/bin/insilico
 
 CAVE: after this step, the MOD file will be gzipped (without any indication in the file name)
     
@@ -108,7 +111,11 @@ Part II: Mapping - this needs to be done for every sample
 
 ### II.1. Bowtie/Tophat: mapping to each pseudogenome
 
+In principle, this step can be done with any read alignment programme. Here I show the routine for genome and transcriptome data that is aligned with either bowtie2 or tophat.
+
 #### Non-RNA-seq experiment
+
+--> bowtie2
 
 **building bowtie indeces**
 
@@ -125,13 +132,17 @@ Part II: Mapping - this needs to be done for every sample
 
     samtools index ${genotype}_${sample}.sorted.bam &
   
-##### RNA-seq: tophat
+#### RNA-seq: tophat
 
-a) generate GTFs for maternal and paternal versions: **modmap**
-b) transcriptome build for both genotypes using 1 set of FASTQs with **TopHat**
-c) run TopHat on remaining samples
+In contrast to genome alignment, transcriptome alignment programs often benefit from supplying a file containing known gene-coordinates (e.g. a GTF file). This file must be present for each pseudogenome.
 
-###### a) modmap
+* a) generate GTFs for maternal and paternal versions: **modmap**
+* b) transcriptome build for both genotypes using 1 set of FASTQs with **TopHat**
+* c) run TopHat on remaining samples
+
+###### a) GTF for pseudogenome
+
+--> lapels/bin/modmap
 
 modmap expects 0-based positions, since gtf files are 1-based, I first convert them into 0-based, use modmap to change the annotation to match the individual genomes, and turn the resulting 0-based gtf file back into 1-based (additionally, I remove the negative numbers introduced by modmap for regions that fall into deletions)
 
@@ -150,12 +161,12 @@ the awk magic here is neccessary to turn the negative values into positive ones 
 
 * you'll need the insert sizes for the reads from RNA-seq experiments --> I used a script from Andreas that generated txt files named "insert_stats_RNA..." using Picard
 
-extracting the values for standard deviation and inner distance from the text files
+extracting the values for standard deviation and inner distance from the text files:
 
     STD_DEV=`sed '1d' fastq/insert_stats/insert_stats_RNA__1.txt | sed -n '3p' | awk '{print sprintf("%.0f",$2)}'`
     INNER_DIST=`sed '1d' fastq/insert_stats/insert_stats_RNA_WT_1.txt | sed -n '3p' | awk '{print sprintf("%.0f",$1)}'`
 
-running top hat _once per pseudogenome_ to obtain the transcriptome indeces      
+running top hat _once per pseudogenome_ to obtain the transcriptome indeces:      
 
     tophat2 -G ${REF_GENOME}_${genotype}_1based.gtf \
 	--transcriptome-index transcriptome_data/${REF_GENOME}_${genotype}_transcriptomeIndex \
@@ -166,7 +177,7 @@ running top hat _once per pseudogenome_ to obtain the transcriptome indeces
 	    SAMPLE_R1.fastq.gz \
     	    SAMPLE_R2.fastq.gz
     
-#### c) looping over remaining files fastq files (if any)**
+###### c) looping over remaining files fastq files (if any)
 
         for fastq in ${FASTQ_FOLDER}*_R1.fastq.gz
         do
@@ -188,10 +199,11 @@ running top hat _once per pseudogenome_ to obtain the transcriptome indeces
 	done
   
 
-### II.2. lapels/bin/pylapels
+### II.2. Translating the different pseudogenome mappings back to reference genome
 
-**translate different pseudogenome mappings back to reference genome**
+This is the core functionality of the lapels package.
 
+--> lapels/bin/pylapels
 
     lapels-1.0.5/bin/pylapels -p 50 -f \
 		-o ${bam}_mappedBackTo_${REF_GENOME}.bam \
@@ -199,9 +211,15 @@ running top hat _once per pseudogenome_ to obtain the transcriptome indeces
     
  
 
-### II.3 suspenders/bin/pysuspenders
+### II.3 Merging pseudogenome mappings
 
-merging the parental and maternal mapping, determining best fit for each read --> 1 BAM file with reads where flags indicate maternal or paternal origin
+--> suspenders/bin/pysuspenders
+
+suspenders will determine the best fit for each read
+
+input: 2 BAMs, one for each pseudogenome mapping (parental, maternal)
+
+output: 1 BAM file with reads where flags indicate maternal or paternal origin
 
 		suspenders-0.2.4/bin/pysuspenders #
 			--lapels --quality -p 15 mergedAlignment_${SAMPLE}.bam #
@@ -212,19 +230,14 @@ merging the parental and maternal mapping, determining best fit for each read --
 
 Part III: Counting allele-specific reads
 -----------------------------------------
+
 ### III BAM file filter, merge, sort, index
 
-Suspender files should be filtered:
+Suspender's output needs to be modified for most down-stream analyses:
 
-   * multiple alignments
-   * randomly assigned reads 
-   * chrM, random chromosomes 
-   
-     samtools view -h -F 4 ${BAM}|\
-	./samFilter_v2_suspenders.py \
-		--filter_out_from_BED conspicuousEnrichments.forDelete.bed \
-	    --random --chrM --multiple --mismatch --lowqual --suspendersRandom |\
-      samtools view -Sb - > ${out}_filtered.rnsort.bam &
+   * __filtering__ for multiple alignments (at read alignment step), randomly assigned reads (by suspenders), chrM, random chromosomes
+   * __sorting__ - suspenders outputs a BAM file sorted by read name, this cannot be indexed and is thus unsuitable for most down-stream analyses --> sorting by coordinates
+
       
 coordinate sorting (most tools want that) + indexing
 
@@ -232,10 +245,5 @@ coordinate sorting (most tools want that) + indexing
         do
         out=`basename "$BAM" .bam`
         samtools sort -m 4000000000 ${BAM} ${out}.sort 
+        samtools index ${out}.sort
         done   
-        
-        for BAM in *.sort.bam
-        do
-        samtools index ${BAM} &
-        done
-        wait
