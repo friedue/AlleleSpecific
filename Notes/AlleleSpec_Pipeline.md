@@ -18,46 +18,59 @@ Please see those publications for details on lapels, suspenders and MOD files:
 
 * FASTQ files of raw reads
 
-
+```
     FASTQ_FOLDER=(fastqs/ ) # assumes that fastq files end with .fastq.gz and paired-end sequencing, (_R1, _R2) 
+```
 
 * MOD file -- if the MOD file is not available, it must be created or downloaded
   * check whether your MOD file is available [here](http://www.csbio.unc.edu/CCstatus/index.py?run=Pseudo "MOD files supplied by Huang et al.") 
   * otherwise, you will absolutely need VCF files with the information for your strain(s) of interest and their differences to the reference genome and the reference genome FASTA file:
 
-
+```
     REF_FASTA=ce10.fa # fasta file for reference genome, e.g. mm9, dm3, ce10....
     VCF_SNP=snps.vcf # must contain the information about genetic variants for at least both strains of interest
     VCF_INDELS=indels.vcf # like snps.vcf, must contain information about the genetic variations
+```
 
 * for RNA-seq: GTF file is needed, too
     
 ##### information
 
+these variables should be set regardless whether a MOD file is available already or not
+
+```
     REF_GENOME=ce10 # reference genome
     MAT_STRAIN=A # maternal strain --> must match entry from to vcf column
     PAT_STRAIN=B # paternal strain --> must match entry from vcf column
     CHROMOSOMES=1,2,3,X --> in case, one is interested in a couple of chromosomes only
+```
 
 ##### programs
 
-###### lapels/suspenders tools
+###### MOD file generation
+
+lapels comes with a set of supplementary scripts that can be used to generate the MOD file if needed:
 
 1. get_refmeta
 2. vcf2mod
 3. insilico
-4. modmap (gene annotation)
-5. lapels
-6. suspenders
+
+* custom-made script: changeChrNamesInMODFile.awk 
+* additional tool: tabix
+
+###### After MOD file generation
+
+These scripts contain the core of the lapels/suspenders package:
+4. __modmap__: lifting over coordinates of _annotation_ files (e.g. BED, GTF)
+5. __lapels__: lifting over the coordinates of _read_ files (BAM)
+6. __suspenders__: merging of 2 BAM files that were aligned to different "pseudogenomes"
 
 ###### additional tools
 
-* tabix
-* bowtie2/tophat
+* bowtie2/tophat - for read alignment
 
 ###### custom-made scripts
 
-* changeChrNamesInMODFile.awk
 * allelicFilter.py
 * additional script for insert-size determination (needed only if TopHat is used for alignment)
 
