@@ -181,24 +181,28 @@ running top hat _once per pseudogenome_ to obtain the transcriptome indeces:
 
         for fastq in ${FASTQ_FOLDER}*_R1.fastq.gz
         do
-	    forStats=$(basename "$fastq" .fastq.gz | sed 's/_R[1-2]//' |  awk '{print substr($0,index($0,"_RNA")+1)}')
-            STD_DEV=`sed '1d' fastq/insert_stats/insert_stats_${forStats}.txt | sed -n '3p' | awk '{print sprintf("%.0f",$2)}'`
-           INNER_DIST=`sed '1d' fastq/insert_stats/insert_stats_${forStats}.txt | sed -n '3p' | awk '{print sprintf("%.0f",$1)}'`
         
-            sample=$(basename "$fastq" .fastq.gz | sed 's/_R[1-2]//') # extracting sample name
-        
-            tophat2 -o ${sample}_${genotype} -p 20 \
-			-G ${REF_GENOME}_${genotype}_1based.gtf \
-			--transcriptome-index transcriptome_data/${genotype}_transcriptomeIndex \
-			--no-coverage-search --library-type fr-firststrand \
-			--mate-inner-dist ${INNER_DIST} --mate-std-dev ${STD_DEV} \
-			pseudogenome_${REF_GENOME}_${genotype} \
-			${FASTQ_FOLDER}/${sample}_R1.fastq.gz ${FASTQ_FOLDER}/${sample}_R2.fastq.gz
-   
-	    samtools index ${FOLDER}/accepted_hits.bam &
-	done
-  
+        # extracting std dev and inner distance from the output of Andreas' script
+        forStats=$(basename "$fastq" .fastq.gz | sed 's/_R[1-2]//' | awk '{print substr($0,index($0,"_RNA")+1)}')
+        STD_DEV=`sed '1d' fastq/insert_stats/insert_stats_${forStats}.txt | sed -n '3p' | awk '{print sprintf("%.0f",$2)}'`
+        INNER_DIST=`sed '1d' fastq/insert_stats/insert_stats_${forStats}.txt | sed -n '3p' | awk '{print sprintf("%.0f",$1)}'`
 
+	# extracting sample name        	
+        sample=$(basename "$fastq" .fastq.gz | sed 's/_R[1-2]//')
+        
+        # aligning reads with tophat
+        tophat2 -o ${sample}_${genotype} -p 20 \
+        	-G ${REF_GENOME}_${genotype}_1based.gtf \
+        	--transcriptome-index transcriptome_data/${genotype}_transcriptomeIndex \
+        	--no-coverage-search --library-type fr-firststrand \
+        	--mate-inner-dist ${INNER_DIST} --mate-std-dev ${STD_DEV} \
+        	pseudogenome_${REF_GENOME}_${genotype} \
+        	${FASTQ_FOLDER}/${sample}_R1.fastq.gz ${FASTQ_FOLDER}/${sample}_R2.fastq.gz
+        
+        # indexing aligned reads
+        samtools index ${FOLDER}/accepted_hits.bam &
+        done
+  
 ### II.2. Translating the different pseudogenome mappings back to reference genome
 
 This is the core functionality of the lapels package.
@@ -206,8 +210,8 @@ This is the core functionality of the lapels package.
 --> lapels/bin/pylapels
 
     lapels-1.0.5/bin/pylapels -p 50 -f \
-		-o ${bam}_mappedBackTo_${REF_GENOME}.bam \
-		${REF_GENOME}_indels_SNPs_${genotype}_changedChr.mod ${BAM} > ${bam}_stdout.txt 2> ${bam}_stderr.txt
+    	-o ${bam}_mappedBackTo_${REF_GENOME}.bam \
+    	${REF_GENOME}_indels_SNPs_${genotype}_changedChr.mod ${BAM} > ${bam}_stdout.txt 2> ${bam}_stderr.txt
     
  
 
@@ -221,10 +225,13 @@ input: 2 BAMs, one for each pseudogenome mapping (parental, maternal)
 
 output: 1 BAM file with reads where flags indicate maternal or paternal origin
 
-		suspenders-0.2.4/bin/pysuspenders #
-			--lapels --quality -p 15 mergedAlignment_${SAMPLE}.bam #
-			tophat_${SAMPLE}_${MAT_STRAIN}/accepted_hits_pylapels.bam #
-			tophat_${SAMPLE}_${PAT_STRAIN}/accepted_hits_pylapels.bam
+example for suspenders on RNA-seq data aligned with tophat:
+
+     suspenders-0.2.4/bin/pysuspenders \
+     	--lapels --quality -p 15 \
+     	mergedAlignment_${SAMPLE}.bam \
+     	tophat_${SAMPLE}_${MAT_STRAIN}/accepted_hits_pylapels.bam \
+     	tophat_${SAMPLE}_${PAT_STRAIN}/accepted_hits_pylapels.bam
 
 -----------------------------------------
 
@@ -237,13 +244,23 @@ Suspender's output needs to be modified for most down-stream analyses:
 
    * __filtering__ for multiple alignments (at read alignment step), randomly assigned reads (by suspenders), chrM, random chromosomes
    * __sorting__ - suspenders outputs a BAM file sorted by read name, this cannot be indexed and is thus unsuitable for most down-stream analyses --> sorting by coordinates
+   * __splitting__ into separate files for maternal and paternal reads
 
-      
-coordinate sorting (most tools want that) + indexing
+---> allelicFilterOct2014.py does all of that 
 
-        for BAM in *rnsort*bam
+     for BAM in mergedAlignment*.bam
+     do
+     	SAMPLE=$(basename "$BAM" .bam)
+     	echo ${SAMPLE}
+     	python allelicFilterOct2014.py -in ${BAM} \
+        	--outfile1 ${SAMPLE}_maternal --outfile2 ${SAMPLE}_paternal \ # optionally, a third output file for those reads that cannot be tracked back to either pseudogenome can also be indicated
+     		-vMulti \ # exclusion of multiple alignments determined by XS and NH tags
+     		--coordinateSorting > counts_${SAMPLE}.txt & \ # counts*.txt will contain statistics about the output files
+     done
+
+indexing of coordinate-sorted BAM files
+
+        for BAM in *.bam
         do
-        out=`basename "$BAM" .bam`
-        samtools sort -m 4000000000 ${BAM} ${out}.sort 
-        samtools index ${out}.sort
+         samtools index ${BAM}
         done   
