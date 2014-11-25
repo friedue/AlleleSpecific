@@ -61,18 +61,15 @@ lapels comes with a set of supplementary scripts that can be used to generate th
 ###### After MOD file generation
 
 These scripts contain the core of the lapels/suspenders package:
+
 4. __modmap__: lifting over coordinates of _annotation_ files (e.g. BED, GTF)
 5. __lapels__: lifting over the coordinates of _read_ files (BAM)
 6. __suspenders__: merging of 2 BAM files that were aligned to different "pseudogenomes"
 
-###### additional tools
-
-* bowtie2/tophat - for read alignment
-
-###### custom-made scripts
-
-* allelicFilter.py
-* additional script for insert-size determination (needed only if TopHat is used for alignment)
+* additional tools: bowtie2/tophat - for read alignment
+* custom-made scripts:
+ * allelicFilter.py
+ * additional script for insert-size determination (needed only if TopHat is used for alignment)
 
 ![Overview](https://raw.githubusercontent.com/friedue/AlleleSpecific/master/images/pipelineOverview.png)
 
