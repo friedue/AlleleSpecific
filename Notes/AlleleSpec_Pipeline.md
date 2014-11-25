@@ -16,12 +16,21 @@ Please see those publications for details on lapels, suspenders and MOD files:
 
 ##### files 
 
-    REF_FASTA=ce10.fa # fasta file for reference genome, e.g. mm9, dm3, ce10....
-    VCF_SNP=snps.vcf 
-    VCF_INDELS=indels.vcf
-    FASTQ_FOLDER=(fastqs/ ) # assumes that fastq files end with .fastq.gz and paired-end sequencing, (_R1, _R2)
+* FASTQ files of raw reads
 
-for RNA-seq: GTF file is needed, too
+
+    FASTQ_FOLDER=(fastqs/ ) # assumes that fastq files end with .fastq.gz and paired-end sequencing, (_R1, _R2) 
+
+* MOD file -- if the MOD file is not available, it must be created or downloaded
+  * check whether your MOD file is available [here](http://www.csbio.unc.edu/CCstatus/index.py?run=Pseudo "MOD files supplied by Huang et al.") 
+  * otherwise, you will absolutely need VCF files with the information for your strain(s) of interest and their differences to the reference genome and the reference genome FASTA file:
+
+
+    REF_FASTA=ce10.fa # fasta file for reference genome, e.g. mm9, dm3, ce10....
+    VCF_SNP=snps.vcf # must contain the information about genetic variants for at least both strains of interest
+    VCF_INDELS=indels.vcf # like snps.vcf, must contain information about the genetic variations
+
+* for RNA-seq: GTF file is needed, too
     
 ##### information
 
@@ -38,6 +47,8 @@ for RNA-seq: GTF file is needed, too
 2. vcf2mod
 3. insilico
 4. modmap (gene annotation)
+5. lapels
+6. suspenders
 
 ###### additional tools
 
