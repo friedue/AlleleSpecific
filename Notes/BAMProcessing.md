@@ -20,17 +20,20 @@ Once the pipeline as described in [AlleleSpec_Pipeline.md](https://github.com/fr
 <a name="AI"></a>
 ## 3. Allelic imbalance
 
-I define allelic imbalance based on the ratio of read counts for the maternal vs. the paternal allele. 
+To get an impression of the distribution of putative maternally or paternally biased genome regions, I make bigWig files of allelic imbalance scores. I define the allelic imbalance score based on the ratio of read counts for the maternal vs. the paternal allele:
 
 ```
 AI = (Nmat - Npat) / (Nmat + Npat)
 ```
+| AI score | meaning |
+|--------|----------|
+| -1 | all paternal reads |
+| 0 | equal number of reads from both alleles | 
+| +1 | all maternal reads |
 
-* -1 = paternal origin
-* 0 = equal number of reads from mat and pat
-* 1 = maternal origin
+I tried two ways for the genome-wide calculation: a [modified version of bamCoverage](#AIbamCov) from deepTools and [edgeR](#AIedgeR)
 
-* I tried two ways for the genome-wide calculation: a [modified version of bamCoverage](#AIbamCov) from deepTools and [edgeR](#AIedgeR)
+Both returned comparable results, but edgeR can handle regions with very low or 0 reads in one allele better and more robustly than deepTools.
 
 <a name="AIbamCov"></a>
 ### allelic imbalance with bamCoverage
