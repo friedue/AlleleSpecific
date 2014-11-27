@@ -35,4 +35,4 @@ __see this [script on the mapping pipeline](https://github.com/friedue/AlleleSpe
 
 e.g. count tables of reads per genomic regions, bigWig files etc.
 
-see my notes on [BAM Post-Processing](https://github.com/friedue/AlleleSpecific/blob/master/Notes/BAMProcessing.md)
+__see my notes on [BAM Post-Processing](https://github.com/friedue/AlleleSpecific/blob/master/Notes/BAMProcessing.md) for the details__
