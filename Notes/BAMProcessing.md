@@ -20,7 +20,17 @@ Once the pipeline as described in [AlleleSpec_Pipeline.md](https://github.com/fr
 <a name="AI"></a>
 ## 3. Allelic imbalance
 
-* I tried two ways: a [modified version of bamCoverage](#AIbamCov) from deepTools and [edgeR](#AIedgeR)
+I define allelic imbalance based on the ratio of read counts for the maternal vs. the paternal allele. 
+
+```
+AI = (Nmat - Npat) / (Nmat + Npat)
+```
+
+* -1 = paternal origin
+* 0 = equal number of reads from mat and pat
+* 1 = maternal origin
+
+* I tried two ways for the genome-wide calculation: a [modified version of bamCoverage](#AIbamCov) from deepTools and [edgeR](#AIedgeR)
 
 <a name="AIbamCov"></a>
 ### allelic imbalance with bamCoverage
@@ -52,10 +62,10 @@ subread-1.4.5-p1-source/bin/featureCounts --ignoreDup -f -O -Q 20 -p -T 35 -a mm
 
 3. __edgeR__
 
-the featureCount table will be fed to edgeR which will assess the read counts of the replicates for each sample and will compare them for the different alleles
+The featureCount table will be fed to edgeR which will assess the read counts of the replicates for each sample and will compare them for the different alleles. edgeR will calculate a logFC between both alleles (using CASTEiJ as the reference "condition") which I will turn into the allelic imbalance score described above.
 
 --> edgeR must be installed in R
---> allelicImbalance_doneWithEdgeR.R script for optimized reading in and handling of large featureCount tables
+--> [allelicImbalance_doneWithEdgeR.R](https://github.com/friedue/AlleleSpecific/blob/master/individualScripts/post-processing/allelicImbalance_doneWithEdgeR.R) script for optimized reading in and handling of large featureCount tables and the corresponding [R functions](https://github.com/friedue/AlleleSpecific/blob/master/individualScripts/post-processing/f_edgeRForAllelicImbalance.R)
 
 ```
 ./allelicImbalance_doneWithEdgeR.R featCount_genomeCounts.txt ${SAMPLE} ${CELL}  # running edgeR, getting bedgraph output
