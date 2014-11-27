@@ -25,3 +25,14 @@ merging the two different mappings, identifying most probable origin for each re
 
 - **In**: 1 (preferably read-name-sorted) BAM file with flags set by suspenders, bowtie and/or tophat
 - **Out**: 2-3 (if wanted coordinate-sorted) BAM files - one for each origin (maternal, paternal, ambigious)
+
+=====================================================================
+__see this [script on the mapping pipeline](https://github.com/friedue/AlleleSpecific/blob/master/Notes/AlleleSpec_Pipeline.md) for the details__
+
+=====================================================================
+
+## 5. POST-PROCESSING
+
+e.g. count tables of reads per genomic regions, bigWig files etc.
+
+see my notes on [BAM Post-Processing](https://github.com/friedue/AlleleSpecific/blob/master/Notes/BAMProcessing.md)
