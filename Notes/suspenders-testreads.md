@@ -1,19 +1,25 @@
-#Testing paired-end RNA-Seq reads for lapels-suspenders pipeline
+# Testing the interplay of tophat2 and the lapels-suspenders pipeline
 
-1. Tophat 2.0.8 was used to align the reads to 129S1 and CASTiJ pseudogenomes (step1)
+1. Tophat 2.0.8 was used to align the reads (paired-end seq.) to 129S1 and CASTEiJ pseudogenomes (step1)
 2. Pseudogenomes were mapped to reference mm9 genome by LAPELS (step2)
 3. Alignments were merged together to get one merged BAM file with both reads mapped by SUSPENDERS (step 3)
 
+**Problem**: Tophat's default settings will report multiple possible alignments for non-uniquely aligning read pairs. The question is how suspenders handles those multiply occurring fragments.
+
+To address this question, we manually checked a couple of reads which are reported here.
+
 **BOLD TEXT: primary alignment**
+
 NORMAL TEXT: secondary alignment
 (Read sequence is removed)
 
-##TEST READ: 212
+TEST READ: 212
 ====================
 
 ###STEP1: mapping to pseudogenome by TOPHAT - OUTPUT
 
-```SRR1106780.10000212	419	chr15	98731260	1	100M	=	98731336	176	
+```
+SRR1106780.10000212	419	chr15	98731260	1	100M	=	98731336	176	
 AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:-	NH:i:4	CC:Z:=	CP:i:98836524	HI:i:0
 SRR1106780.10000212	339	chr15	98731336	1	100M	=	98731260	-176	
 AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:-	NH:i:4	CC:Z:=	CP:i:98836448	HI:i:0
@@ -28,11 +34,13 @@ AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:+	NH:i:4	CC:Z:ch
 **SRR1106780.10000212	99	chr9	90964223	1	100M	=	90964299	176	
 AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:+	NH:i:4	HI:i:3
 SRR1106780.10000212	147	chr9	90964299	1	100M	=	90964223	-176	
-AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:+	NH:i:4	HI:i:3**```
+AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:+	NH:i:4	HI:i:3**
+```
 
 ###STEP 2: mapping pseudogenomes to the reference by lapels - OUTPUT
 
-```SRR1106780.10000212	419	chr15	98762530	1	100M	=	98762606	176	
+```
+SRR1106780.10000212	419	chr15	98762530	1	100M	=	98762606	176	
 NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	CC:A:=	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:0	XS:A:-	CP:i:98867830	YT:Z:UU	d0:i:0
 SRR1106780.10000212	339	chr15	98762606	1	100M	=	98762530	-176	
 NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	CC:A:=	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:0	XS:A:-	CP:i:98867754	YT:Z:UU	d0:i:0
@@ -47,14 +55,17 @@ NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	CC:Z:chr9	i0:i:0	s0:i:0	OC:Z:100M	XG
 **SRR1106780.10000212	99	chr9	90992646	1	100M	=	90992722	176
 NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:3	XS:A:+	YT:Z:UU	d0:i:0
 SRR1106780.10000212	147	chr9	90992722	1	100M	=	90992646	-176	
-NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:3	XS:A:+	YT:Z:UU	d0:i:0**```
+NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:3	XS:A:+	YT:Z:UU	d0:i:0**
+```
 
 ###STEP 3 : Merging the alignments (Suspenders)- OUTPUT
 
-```**SRR1106780.10000212	355	chr15	98867754	1	100M	=	98867830	176
+```
+**SRR1106780.10000212	355	chr15	98867754	1	100M	=	98867830	176
 NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	CC:Z:chr2	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:1	XS:A:+	CP:i:151285353	YT:Z:UU	d0:i:0	po:i:3	pH:i:3	ct:A:P
 SRR1106780.10000212	403	chr15	98867830	1	100M	=	98867754	-176
-NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	CC:Z:chr2	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:1	XS:A:+	CP:i:151285429	YT:Z:UU	d0:i:0	po:i:3	pH:i:3	ct:A:P**```
+NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	CC:Z:chr2	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:1	XS:A:+	CP:i:151285429	YT:Z:UU	d0:i:0	po:i:3	pH:i:3	ct:A:P**
+```
 
 
 >(only this read-pair with secondary alignment is kept)... In case of another read (see below), the opposite happens..
@@ -65,7 +76,8 @@ NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	CC:Z:chr2	i0:i:0	s0:i:0	OC:Z:100M	XG
 ====================
 
 ###STEP1: mapping to pseudogenome by TOPHAT â€“ OUTPUT
-```SRR1106780.10000308	419	chr17	24850602	1	100M	=	24850695	193
+```
+SRR1106780.10000308	419	chr17	24850602	1	100M	=	24850695	193
 AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:+	NH:i:4	CC:Z:chr4	CP:i:123353010	HI:i:0
 SRR1106780.10000308	339	chr17	24850695	1	100M	=	24850602	-193
 AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:+	NH:i:4	CC:Z:chr4	CP:i:123352917	HI:i:0
@@ -81,11 +93,13 @@ AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:-	NH:i:4	CC:Z:ch
 **SRR1106780.10000308	163	chrX	50250881	1	100M	=	50250974	193
 AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:+	NH:i:4	HI:i:3
 SRR1106780.10000308	83	chrX	50250974	1	100M	=	50250881	-193
-AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:+	NH:i:4	HI:i:3**```
+AS:i:0	XN:i:0	XM:i:0	XO:i:0	XG:i:0	NM:i:0	MD:Z:100	YT:Z:UU	XS:A:+	NH:i:4	HI:i:3**
+```
 
 ###STEP 2: mapping pseudogenomes to the reference by lapels â€“ OUTPUT
 
-```SRR1106780.10000308	419	chr17	24858022	1	100M	=	24858115	193
+```
+SRR1106780.10000308	419	chr17	24858022	1	100M	=	24858115	193
 NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	CC:Z:chr4	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:0	XS:A:+	CP:i:123386761	YT:Z:UU	d0:i:0
 SRR1106780.10000308	339	chr17	24858115	1	100M	=	24858022	-193
 NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	CC:Z:chr4	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:0	XS:A:+	CP:i:123386668	YT:Z:UU	d0:i:0
@@ -101,14 +115,17 @@ MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	CC:Z:chrX	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS
 **SRR1106780.10000308	163	chrX	50252248	1	100M	=	50252341	193
 NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:3	XS:A:+	YT:Z:UU	d0:i:0
 SRR1106780.10000308	83	chrX	50252341	1	100M	=	50252248	-193
-NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:3	XS:A:+	YT:Z:UU	d0:i:0**```
+NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:3	XS:A:+	YT:Z:UU	d0:i:0**
+```
 
 ###STEP 3 : Merging the alignments (Suspenders)- OUTPUT
 
-```**SRR1106780.10000308	83	chrX	50252341	1	100M	=	50252248	-193
+```
+**SRR1106780.10000308	83	chrX	50252341	1	100M	=	50252248	-193
 NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:3	XS:A:+	YT:Z:UU	d0:i:0	po:i:3	pH:i:0	ct:A:P
 SRR1106780.10000308	163	chrX	50252248	1	100M	=	50252341	193
-NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:3	XS:A:+	YT:Z:UU	d0:i:0	po:i:3	pH:i:0	ct:A:P**```
+NH:i:4	MD:Z:100	OM:i:0	XN:i:0	XO:i:0	XM:i:0	i0:i:0	s0:i:0	OC:Z:100M	XG:i:0	AS:i:0	HI:i:3	XS:A:+	YT:Z:UU	d0:i:0	po:i:3	pH:i:0	ct:A:P**
+```
 
 
 >Primary alignment kept at the end (are the read pairs to keep selected at random by suspenders?)
