@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 
-'''This program splits BAM files processed by suspenders: reads are written into different output alignment files (.bam) depending on their genomic origin (which is noted in the po:i tag).'''
-'''If a third output file is indicated, reads which map equally well __at the same position_ in both genomes will also be reported (po:i:3).'''
-'''Currently, this script ignores reads that were assigned by suspender's "RANDOM" filter'. '''
-'''Possible improvements: let user choose which reads should be ignored (not just RANDOM reads, perhaps); allow SAM format for in- and output; multiprocessing'''
+'''This program splits BAM files processed by suspenders: reads are written into different output alignment files (.bam) depending on their genomic origin (which is noted in the po:i tag).
+If a third output file is indicated, reads which map equally well __at the same position_ in both genomes will also be reported (po:i:3).
+Currently, this script ignores reads that were assigned by suspender's "RANDOM" filter'.'''
+'''!! CAVE: the handling of paired-end reads is based on _identical_ read IDs for both reads! the script does not readily
+handle cases in which more than two reads are reported for the same read ID (i.e. if the non-primary alignments have been
+reported!!'''
+'''Possible improvements:
+* let user choose which reads should be ignored (not just RANDOM reads, perhaps)
+* allow SAM format for in- and output
+* multiprocessing'''
 
 import sys
 import argparse
@@ -172,8 +178,8 @@ def main():
         # save both reads (if they passed)
         # and delete the entries from the dictionaries
         if DNAread.qname in seen:
-            keep1 = seen[DNAread.qname]
-            keep2 = keep
+            keep1 = seen[DNAread.qname] # keep info of first read
+            keep2 = keep # keep info of second read
         # if either of the reads can be kept, keep both
             if keep1 or keep2:
                 Counts = save_reads(DNAread, True, outFile1 = out1_noSort, outFile2 = out2_noSort, outFile3 = out3_noSort, c = Counts)
@@ -181,7 +187,7 @@ def main():
             del(seen[DNAread.qname])
             del(seenRead[DNAread.qname])
             
-        # if the current read is not within the seen dictionary
+        # if the current read is not within the "seen" dictionary
         # first check if the read is unpaired
         # if unpaired, save and forget
         # if paired, save and wait for mate
